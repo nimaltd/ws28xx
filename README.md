@@ -7,8 +7,9 @@
 --------------------------------------------------------------------------------
 * http://github.com/nimaltd/ws281x
 -----------------------------------------------------------   
+* This library using HEAP memory. If could not init, increase your HEAP size. (35 byte per pixel)
 * Enable SPI and DMA.
-* Set MSB and 3.3MHz of speed.
+* Set MSB with 3.3MHz of speed.
 * Create a struct.
 * Call Init.
 * Don't forget to use ws281x_update after set pixels.
@@ -23,7 +24,7 @@ int main()
 {
   ...  
 }
-
+// 216 * 35 = 7560 bytes heap usage
 void task_other(void const * argument)
 {
   ws281x_init(&pixel, &hspi1, 216, ws281x_order_grb);
