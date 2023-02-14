@@ -35,3 +35,4 @@ void task_other(void const * argument)
   }
 }
 ```
+![image](https://user-images.githubusercontent.com/4112219/218713303-9bbe7af3-d65d-4c3a-b77d-9a382d98a9ea.png)
