@@ -12,7 +12,7 @@
 * Add and enable it.
 * Configure Bit Length and ... .
 * Enable a TIMER with Internal clock and one channel PWM as default mode.
-* Enable DMA for PWM channel, set Direction Memory to Peripheral, select Increment Memory, set Memory Length to Byte, and set Peripheral Length to Half-Word.
+* Enable DMA for PWM channel, set Direction Memory to Peripheral, select Increment Memory, set Memory Data Width to Byte, and set Peripheral Data Width to Half-Word.
 * Select 'Generate peripheral initialization as a pair of .c/.h files per peripheral' on the Code Generator Tab.
 * Generate Code.
 * Define a structure of `WS28XX_HandleTypeDef`.
