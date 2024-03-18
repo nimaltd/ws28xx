@@ -11,7 +11,7 @@
 * Install Library from https://github.com/nimaltd/STM32-PACK/raw/main/WS28XX/NimaLTD.I-CUBE-WS28XX.pdsc
 * Add and enable it.
 * Configure Bit Length and ... .
-* Enable a TIMER with Internal clock and a channel PWM as default mode.
+* Enable a TIMER with Internal clock and one channel PWM as default mode.
 * Enable DMA for PWM channel and set Direction Memory to Peripheral, select inceriment Memory, Memory Length to Byte, Peripheral Length to Word.
 * Select 'Generate peripheral initialization as a pair of .c/.h files per peripheral' on the Code Generator Tab.
 * Generate Code.
