@@ -19,7 +19,8 @@
 * Call `WS28XX_Init()` and enjoy.
 ---
 # Watch the Video:
-## Coming soon
-
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=TBYatUxH6Ek"><img src="https://img.youtube.com/vi/TBYatUxH6Ek/0.jpg" alt="Video"></a>
+</div>
 
 
