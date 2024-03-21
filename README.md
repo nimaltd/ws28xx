@@ -1,4 +1,4 @@
-# WS28XX LED Series Library for STM32 (PWM + DMA)  
+# WS28XX (WS2811,WS2812,WS2812B,WS2815) LED Series Library for STM32 (PWM + DMA)  
 ---  
 ## Please Do not Forget to get STAR, DONATE and support me on social networks. Thank you. :sparkling_heart:  
 ---   
