@@ -53,8 +53,8 @@ const uint8_t WS28XX_GammaTable[] =
 ************************************************************************************************************/
 
 void WS28XX_Delay(uint32_t Delay);
-void WS28XX_Lock(WS28XX_HandleTypeDef *Handle);
-void WS28XX_UnLock(WS28XX_HandleTypeDef *Handle);
+void WS28XX_Lock(WS28XX_HandleTypeDef *hLed);
+void WS28XX_UnLock(WS28XX_HandleTypeDef *hLed);
 
 /***********************************************************************************************************/
 
@@ -77,20 +77,20 @@ void WS28XX_Delay(uint32_t Delay)
 
 /***********************************************************************************************************/
 
-void WS28XX_Lock(WS28XX_HandleTypeDef *Handle)
+void WS28XX_Lock(WS28XX_HandleTypeDef *hLed)
 {
-  while (Handle->Lock)
+  while (hLed->Lock)
   {
     WS28XX_Delay(1);
   }
-  Handle->Lock = 1;
+  hLed->Lock = 1;
 }
 
 /***********************************************************************************************************/
 
-void WS28XX_UnLock(WS28XX_HandleTypeDef *Handle)
+void WS28XX_UnLock(WS28XX_HandleTypeDef *hLed)
 {
-  Handle->Lock = 0;
+  hLed->Lock = 0;
 }
 
 /************************************************************************************************************
@@ -98,11 +98,11 @@ void WS28XX_UnLock(WS28XX_HandleTypeDef *Handle)
 ************************************************************************************************************/
 
 /**
-  * @brief  Initialize WS28XX handle
-  * @note   Initialize WS28XX handle and set the Channel and number of Pixels
+  * @brief  Initialize WS28XX hLed
+  * @note   Initialize WS28XX hLed and set the Channel and number of Pixels
   *
-  * @param  *Handle: Pointer to WS28XX_HandleTypeDef structure
-  * @param  *HTim: Pointer to TIM_HandleTypeDef structure
+  * @param  *hLed: Pointer to WS28XX_hLedTypeDef structure
+  * @param  *hTim: Pointer to TIM_hLedTypeDef structure
   * @param  Channel: Selected PWM channel
   *         TIM_CHANNEL_1
   *         TIM_CHANNEL_2
@@ -114,14 +114,14 @@ void WS28XX_UnLock(WS28XX_HandleTypeDef *Handle)
   *
   * @retval bool: true or false
   */
-bool WS28XX_Init(WS28XX_HandleTypeDef *Handle, TIM_HandleTypeDef *HTim,
+bool WS28XX_Init(WS28XX_HandleTypeDef *hLed, TIM_HandleTypeDef *hTim,
       uint16_t TimerBusFrequencyMHz, uint8_t Channel, uint16_t Pixel)
 {
   bool answer = false;
   uint32_t aar_value;
   do
   {
-    if (Handle == NULL || HTim == NULL)
+    if (hLed == NULL || hTim == NULL)
     {
       break;
     }
@@ -129,17 +129,17 @@ bool WS28XX_Init(WS28XX_HandleTypeDef *Handle, TIM_HandleTypeDef *HTim,
     {
       break;
     }
-    Handle->Channel = Channel;
-    Handle->MaxPixel = Pixel;
-    Handle->HTim = HTim;
+    hLed->Channel = Channel;
+    hLed->MaxPixel = Pixel;
+    hLed->hTim = hTim;
     aar_value = (TimerBusFrequencyMHz / (1.0f / (WS28XX_PULSE_LENGTH_NS / 1000.0f))) - 1;
-    __HAL_TIM_SET_AUTORELOAD(Handle->HTim ,aar_value);
-    __HAL_TIM_SET_PRESCALER(Handle->HTim, 0);
-    Handle->Pulse0 = ((WS28XX_PULSE_0_NS / 1000.0f) * aar_value) / (WS28XX_PULSE_LENGTH_NS / 1000.0f);
-    Handle->Pulse1 = ((WS28XX_PULSE_1_NS / 1000.0f) * aar_value) / (WS28XX_PULSE_LENGTH_NS / 1000.0f);
-    memset(Handle->Pixel, 0, sizeof(Handle->Pixel));
-    memset(Handle->Buffer, 0, sizeof(Handle->Buffer));
-    HAL_TIM_PWM_Start_DMA(Handle->HTim, Handle->Channel, (const uint32_t*)Handle->Buffer, Pixel);
+    __HAL_TIM_SET_AUTORELOAD(hLed->hTim ,aar_value);
+    __HAL_TIM_SET_PRESCALER(hLed->hTim, 0);
+    hLed->Pulse0 = ((WS28XX_PULSE_0_NS / 1000.0f) * aar_value) / (WS28XX_PULSE_LENGTH_NS / 1000.0f);
+    hLed->Pulse1 = ((WS28XX_PULSE_1_NS / 1000.0f) * aar_value) / (WS28XX_PULSE_LENGTH_NS / 1000.0f);
+    memset(hLed->Pixel, 0, sizeof(hLed->Pixel));
+    memset(hLed->Buffer, 0, sizeof(hLed->Buffer));
+    HAL_TIM_PWM_Start_DMA(hLed->hTim, hLed->Channel, (const uint32_t*)hLed->Buffer, Pixel);
     answer = true;
   }
   while (0);
@@ -153,7 +153,7 @@ bool WS28XX_Init(WS28XX_HandleTypeDef *Handle, TIM_HandleTypeDef *HTim,
   * @brief  Set Pixel
   * @note   Fill the pixel By RGB Values
   *
-  * @param  *Handle: Pointer to WS28XX_HandleTypeDef structure
+  * @param  *hLed: Pointer to WS28XX_hLedTypeDef structure
   * @param  Pixel: Pixel Starts from 0 to Max - 1
   * @param  Red: Red Value, 0 to 255
   * @param  Green: Green Value, 0 to 255
@@ -161,43 +161,43 @@ bool WS28XX_Init(WS28XX_HandleTypeDef *Handle, TIM_HandleTypeDef *HTim,
   *
   * @retval bool: true or false
   */
-bool WS28XX_SetPixel_RGB(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint8_t Red, uint8_t Green, uint8_t Blue)
+bool WS28XX_SetPixel_RGB(WS28XX_HandleTypeDef *hLed, uint16_t Pixel, uint8_t Red, uint8_t Green, uint8_t Blue)
 {
   bool answer = true;
   do
   {
-    if (Pixel >= Handle->MaxPixel)
+    if (Pixel >= hLed->MaxPixel)
     {
       answer = false;
       break;
     }
 #if (WS28XX_GAMMA == false)
 #if WS28XX_ORDER == WS28XX_ORDER_RGB
-    Handle->Pixel[Pixel][0] = Red;
-    Handle->Pixel[Pixel][1] = Green;
-    Handle->Pixel[Pixel][2] = Blue;
+    hLed->Pixel[Pixel][0] = Red;
+    hLed->Pixel[Pixel][1] = Green;
+    hLed->Pixel[Pixel][2] = Blue;
 #elif WS28XX_ORDER == WS28XX_ORDER_BGR
-    Handle->Pixel[Pixel][0] = Blue;
-    Handle->Pixel[Pixel][1] = Green;
-    Handle->Pixel[Pixel][2] = Red;
+    hLed->Pixel[Pixel][0] = Blue;
+    hLed->Pixel[Pixel][1] = Green;
+    hLed->Pixel[Pixel][2] = Red;
 #elif WS28XX_ORDER == WS28XX_ORDER_GRB
-    Handle->Pixel[Pixel][0] = Green;
-    Handle->Pixel[Pixel][1] = Red;
-    Handle->Pixel[Pixel][2] = Blue;
+    hLed->Pixel[Pixel][0] = Green;
+    hLed->Pixel[Pixel][1] = Red;
+    hLed->Pixel[Pixel][2] = Blue;
 #endif
 #else
 #if WS28XX_ORDER == WS28XX_ORDER_RGB
-    Handle->Pixel[Pixel][0] = WS28XX_GammaTable[Red];
-    Handle->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
-    Handle->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
+    hLed->Pixel[Pixel][0] = WS28XX_GammaTable[Red];
+    hLed->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
+    hLed->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
 #elif WS28XX_ORDER == WS28XX_ORDER_BGR
-    Handle->Pixel[Pixel][0] = WS28XX_GammaTable[Blue];
-    Handle->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
-    Handle->Pixel[Pixel][2] = WS28XX_GammaTable[Red];
+    hLed->Pixel[Pixel][0] = WS28XX_GammaTable[Blue];
+    hLed->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
+    hLed->Pixel[Pixel][2] = WS28XX_GammaTable[Red];
 #elif WS28XX_ORDER == WS28XX_ORDER_GRB
-    Handle->Pixel[Pixel][0] = WS28XX_GammaTable[Green];
-    Handle->Pixel[Pixel][1] = WS28XX_GammaTable[Red];
-    Handle->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
+    hLed->Pixel[Pixel][0] = WS28XX_GammaTable[Green];
+    hLed->Pixel[Pixel][1] = WS28XX_GammaTable[Red];
+    hLed->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
 #endif
 #endif
   }
@@ -213,19 +213,19 @@ bool WS28XX_SetPixel_RGB(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint8_t R
   * @brief  Set Pixel
   * @note   Fill the pixel By RGB Values
   *
-  * @param  *Handle: Pointer to WS28XX_HandleTypeDef structure
+  * @param  *hLed: Pointer to WS28XX_hLedTypeDef structure
   * @param  Pixel: Pixel Starts from 0 to Max - 1
   * @param  Color: RGB565 Color Code
   *
   * @retval bool: true or false
   */
-bool WS28XX_SetPixel_RGB_565(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint16_t Color)
+bool WS28XX_SetPixel_RGB_565(WS28XX_HandleTypeDef *hLed, uint16_t Pixel, uint16_t Color)
 {
   bool answer = true;
   uint8_t Red, Green, Blue;
   do
   {
-    if (Pixel >= Handle->MaxPixel)
+    if (Pixel >= hLed->MaxPixel)
     {
       answer = false;
       break;
@@ -235,31 +235,31 @@ bool WS28XX_SetPixel_RGB_565(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint1
     Blue = ((Color << 3) & 0xF8);
 #if (WS28XX_GAMMA == false)
 #if WS28XX_ORDER == WS28XX_ORDER_RGB
-    Handle->Pixel[Pixel][0] = Red;
-    Handle->Pixel[Pixel][1] = Green;
-    Handle->Pixel[Pixel][2] = Blue;
+    hLed->Pixel[Pixel][0] = Red;
+    hLed->Pixel[Pixel][1] = Green;
+    hLed->Pixel[Pixel][2] = Blue;
 #elif WS28XX_ORDER == WS28XX_ORDER_BGR
-    Handle->Pixel[Pixel][0] = Blue;
-    Handle->Pixel[Pixel][1] = Green;
-    Handle->Pixel[Pixel][2] = Red;
+    hLed->Pixel[Pixel][0] = Blue;
+    hLed->Pixel[Pixel][1] = Green;
+    hLed->Pixel[Pixel][2] = Red;
 #elif WS28XX_ORDER == WS28XX_ORDER_GRB
-    Handle->Pixel[Pixel][0] = Green;
-    Handle->Pixel[Pixel][1] = Red;
-    Handle->Pixel[Pixel][2] = Blue;
+    hLed->Pixel[Pixel][0] = Green;
+    hLed->Pixel[Pixel][1] = Red;
+    hLed->Pixel[Pixel][2] = Blue;
 #endif
 #else
 #if WS28XX_ORDER == WS28XX_ORDER_RGB
-    Handle->Pixel[Pixel][0] = WS28XX_GammaTable[Red];
-    Handle->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
-    Handle->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
+    hLed->Pixel[Pixel][0] = WS28XX_GammaTable[Red];
+    hLed->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
+    hLed->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
 #elif WS28XX_ORDER == WS28XX_ORDER_BGR
-    Handle->Pixel[Pixel][0] = WS28XX_GammaTable[Blue];
-    Handle->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
-    Handle->Pixel[Pixel][2] = WS28XX_GammaTable[Red];
+    hLed->Pixel[Pixel][0] = WS28XX_GammaTable[Blue];
+    hLed->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
+    hLed->Pixel[Pixel][2] = WS28XX_GammaTable[Red];
 #elif WS28XX_ORDER == WS28XX_ORDER_GRB
-    Handle->Pixel[Pixel][0] = WS28XX_GammaTable[Green];
-    Handle->Pixel[Pixel][1] = WS28XX_GammaTable[Red];
-    Handle->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
+    hLed->Pixel[Pixel][0] = WS28XX_GammaTable[Green];
+    hLed->Pixel[Pixel][1] = WS28XX_GammaTable[Red];
+    hLed->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
 #endif
 #endif
   }
@@ -275,19 +275,19 @@ bool WS28XX_SetPixel_RGB_565(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint1
   * @brief  Set Pixel
   * @note   Fill the pixel By RGB Values
   *
-  * @param  *Handle: Pointer to WS28XX_HandleTypeDef structure
+  * @param  *hLed: Pointer to WS28XX_hLedTypeDef structure
   * @param  Pixel: Pixel Starts from 0 to Max - 1
   * @param  Color: RGB888 Color Code
   *
   * @retval bool: true or false
   */
-bool WS28XX_SetPixel_RGB_888(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint32_t Color)
+bool WS28XX_SetPixel_RGB_888(WS28XX_HandleTypeDef *hLed, uint16_t Pixel, uint32_t Color)
 {
   bool answer = true;
   uint8_t Red, Green, Blue;
   do
   {
-    if (Pixel >= Handle->MaxPixel)
+    if (Pixel >= hLed->MaxPixel)
     {
       answer = false;
       break;
@@ -297,31 +297,31 @@ bool WS28XX_SetPixel_RGB_888(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint3
     Blue = (Color & 0x0000FF);
 #if (WS28XX_GAMMA == false)
 #if WS28XX_ORDER == WS28XX_ORDER_RGB
-    Handle->Pixel[Pixel][0] = Red;
-    Handle->Pixel[Pixel][1] = Green;
-    Handle->Pixel[Pixel][2] = Blue;
+    hLed->Pixel[Pixel][0] = Red;
+    hLed->Pixel[Pixel][1] = Green;
+    hLed->Pixel[Pixel][2] = Blue;
 #elif WS28XX_ORDER == WS28XX_ORDER_BGR
-    Handle->Pixel[Pixel][0] = Blue;
-    Handle->Pixel[Pixel][1] = Green;
-    Handle->Pixel[Pixel][2] = Red;
+    hLed->Pixel[Pixel][0] = Blue;
+    hLed->Pixel[Pixel][1] = Green;
+    hLed->Pixel[Pixel][2] = Red;
 #elif WS28XX_ORDER == WS28XX_ORDER_GRB
-    Handle->Pixel[Pixel][0] = Green;
-    Handle->Pixel[Pixel][1] = Red;
-    Handle->Pixel[Pixel][2] = Blue;
+    hLed->Pixel[Pixel][0] = Green;
+    hLed->Pixel[Pixel][1] = Red;
+    hLed->Pixel[Pixel][2] = Blue;
 #endif
 #else
 #if WS28XX_ORDER == WS28XX_ORDER_RGB
-    Handle->Pixel[Pixel][0] = WS28XX_GammaTable[Red];
-    Handle->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
-    Handle->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
+    hLed->Pixel[Pixel][0] = WS28XX_GammaTable[Red];
+    hLed->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
+    hLed->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
 #elif WS28XX_ORDER == WS28XX_ORDER_BGR
-    Handle->Pixel[Pixel][0] = WS28XX_GammaTable[Blue];
-    Handle->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
-    Handle->Pixel[Pixel][2] = WS28XX_GammaTable[Red];
+    hLed->Pixel[Pixel][0] = WS28XX_GammaTable[Blue];
+    hLed->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
+    hLed->Pixel[Pixel][2] = WS28XX_GammaTable[Red];
 #elif WS28XX_ORDER == WS28XX_ORDER_GRB
-    Handle->Pixel[Pixel][0] = WS28XX_GammaTable[Green];
-    Handle->Pixel[Pixel][1] = WS28XX_GammaTable[Red];
-    Handle->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
+    hLed->Pixel[Pixel][0] = WS28XX_GammaTable[Green];
+    hLed->Pixel[Pixel][1] = WS28XX_GammaTable[Red];
+    hLed->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
 #endif
 #endif
   }
@@ -337,20 +337,20 @@ bool WS28XX_SetPixel_RGB_888(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint3
   * @brief  Set Pixel and Brightness
   * @note   Fill the pixel By RGB Values
   *
-  * @param  *Handle: Pointer to WS28XX_HandleTypeDef structure
+  * @param  *hLed: Pointer to WS28XX_hLedTypeDef structure
   * @param  Pixel: Pixel Starts from 0 to Max - 1
   * @param  Color: RGB565 Color Code
   * @param  Brightness: Brightness level, 0 to 255
   *
   * @retval bool: true or false
   */
-bool WS28XX_SetPixel_RGBW_565(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint16_t Color, uint8_t Brightness)
+bool WS28XX_SetPixel_RGBW_565(WS28XX_HandleTypeDef *hLed, uint16_t Pixel, uint16_t Color, uint8_t Brightness)
 {
   bool answer = true;
   uint8_t Red, Green, Blue;
   do
   {
-    if (Pixel >= Handle->MaxPixel)
+    if (Pixel >= hLed->MaxPixel)
     {
       answer = false;
       break;
@@ -360,31 +360,31 @@ bool WS28XX_SetPixel_RGBW_565(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint
     Blue = ((Color << 3) & 0xF8) * Brightness / 255;
 #if (WS28XX_GAMMA == false)
 #if WS28XX_ORDER == WS28XX_ORDER_RGB
-    Handle->Pixel[Pixel][0] = Red;
-    Handle->Pixel[Pixel][1] = Green;
-    Handle->Pixel[Pixel][2] = Blue;
+    hLed->Pixel[Pixel][0] = Red;
+    hLed->Pixel[Pixel][1] = Green;
+    hLed->Pixel[Pixel][2] = Blue;
 #elif WS28XX_ORDER == WS28XX_ORDER_BGR
-    Handle->Pixel[Pixel][0] = Blue;
-    Handle->Pixel[Pixel][1] = Green;
-    Handle->Pixel[Pixel][2] = Red;
+    hLed->Pixel[Pixel][0] = Blue;
+    hLed->Pixel[Pixel][1] = Green;
+    hLed->Pixel[Pixel][2] = Red;
 #elif WS28XX_ORDER == WS28XX_ORDER_GRB
-    Handle->Pixel[Pixel][0] = Green;
-    Handle->Pixel[Pixel][1] = Red;
-    Handle->Pixel[Pixel][2] = Blue;
+    hLed->Pixel[Pixel][0] = Green;
+    hLed->Pixel[Pixel][1] = Red;
+    hLed->Pixel[Pixel][2] = Blue;
 #endif
 #else
 #if WS28XX_ORDER == WS28XX_ORDER_RGB
-    Handle->Pixel[Pixel][0] = WS28XX_GammaTable[Red];
-    Handle->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
-    Handle->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
+    hLed->Pixel[Pixel][0] = WS28XX_GammaTable[Red];
+    hLed->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
+    hLed->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
 #elif WS28XX_ORDER == WS28XX_ORDER_BGR
-    Handle->Pixel[Pixel][0] = WS28XX_GammaTable[Blue];
-    Handle->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
-    Handle->Pixel[Pixel][2] = WS28XX_GammaTable[Red];
+    hLed->Pixel[Pixel][0] = WS28XX_GammaTable[Blue];
+    hLed->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
+    hLed->Pixel[Pixel][2] = WS28XX_GammaTable[Red];
 #elif WS28XX_ORDER == WS28XX_ORDER_GRB
-    Handle->Pixel[Pixel][0] = WS28XX_GammaTable[Green];
-    Handle->Pixel[Pixel][1] = WS28XX_GammaTable[Red];
-    Handle->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
+    hLed->Pixel[Pixel][0] = WS28XX_GammaTable[Green];
+    hLed->Pixel[Pixel][1] = WS28XX_GammaTable[Red];
+    hLed->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
 #endif
 #endif
   }
@@ -400,20 +400,20 @@ bool WS28XX_SetPixel_RGBW_565(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint
   * @brief  Set Pixel and Brightness
   * @note   Fill the pixel By RGB Values
   *
-  * @param  *Handle: Pointer to WS28XX_HandleTypeDef structure
+  * @param  *hLed: Pointer to WS28XX_hLedTypeDef structure
   * @param  Pixel: Pixel Starts from 0 to Max - 1
   * @param  Color: RGB888 Color Code
   * @param  Brightness: Brightness level, 0 to 255
   *
   * @retval bool: true or false
   */
-bool WS28XX_SetPixel_RGBW_888(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint32_t Color, uint8_t Brightness)
+bool WS28XX_SetPixel_RGBW_888(WS28XX_HandleTypeDef *hLed, uint16_t Pixel, uint32_t Color, uint8_t Brightness)
 {
   bool answer = true;
   uint8_t Red, Green, Blue;
   do
   {
-    if (Pixel >= Handle->MaxPixel)
+    if (Pixel >= hLed->MaxPixel)
     {
       answer = false;
       break;
@@ -423,31 +423,31 @@ bool WS28XX_SetPixel_RGBW_888(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint
     Blue = (Color & 0x0000FF) * Brightness / 255;
 #if (WS28XX_GAMMA == false)
 #if WS28XX_ORDER == WS28XX_ORDER_RGB
-    Handle->Pixel[Pixel][0] = Red;
-    Handle->Pixel[Pixel][1] = Green;
-    Handle->Pixel[Pixel][2] = Blue;
+    hLed->Pixel[Pixel][0] = Red;
+    hLed->Pixel[Pixel][1] = Green;
+    hLed->Pixel[Pixel][2] = Blue;
 #elif WS28XX_ORDER == WS28XX_ORDER_BGR
-    Handle->Pixel[Pixel][0] = Blue;
-    Handle->Pixel[Pixel][1] = Green;
-    Handle->Pixel[Pixel][2] = Red;
+    hLed->Pixel[Pixel][0] = Blue;
+    hLed->Pixel[Pixel][1] = Green;
+    hLed->Pixel[Pixel][2] = Red;
 #elif WS28XX_ORDER == WS28XX_ORDER_GRB
-    Handle->Pixel[Pixel][0] = Green;
-    Handle->Pixel[Pixel][1] = Red;
-    Handle->Pixel[Pixel][2] = Blue;
+    hLed->Pixel[Pixel][0] = Green;
+    hLed->Pixel[Pixel][1] = Red;
+    hLed->Pixel[Pixel][2] = Blue;
 #endif
 #else
 #if WS28XX_ORDER == WS28XX_ORDER_RGB
-    Handle->Pixel[Pixel][0] = WS28XX_GammaTable[Red];
-    Handle->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
-    Handle->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
+    hLed->Pixel[Pixel][0] = WS28XX_GammaTable[Red];
+    hLed->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
+    hLed->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
 #elif WS28XX_ORDER == WS28XX_ORDER_BGR
-    Handle->Pixel[Pixel][0] = WS28XX_GammaTable[Blue];
-    Handle->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
-    Handle->Pixel[Pixel][2] = WS28XX_GammaTable[Red];
+    hLed->Pixel[Pixel][0] = WS28XX_GammaTable[Blue];
+    hLed->Pixel[Pixel][1] = WS28XX_GammaTable[Green];
+    hLed->Pixel[Pixel][2] = WS28XX_GammaTable[Red];
 #elif WS28XX_ORDER == WS28XX_ORDER_GRB
-    Handle->Pixel[Pixel][0] = WS28XX_GammaTable[Green];
-    Handle->Pixel[Pixel][1] = WS28XX_GammaTable[Red];
-    Handle->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
+    hLed->Pixel[Pixel][0] = WS28XX_GammaTable[Green];
+    hLed->Pixel[Pixel][1] = WS28XX_GammaTable[Red];
+    hLed->Pixel[Pixel][2] = WS28XX_GammaTable[Blue];
 #endif
 #endif
   }
@@ -463,38 +463,38 @@ bool WS28XX_SetPixel_RGBW_888(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint
   * @brief  Send Buffer to LEDs
   * @note   This function use PWM+DMA for Sending data
   *
-  * @param  *Handle: Pointer to WS28XX_HandleTypeDef structure
+  * @param  *hLed: Pointer to WS28XX_hLedTypeDef structure
   *
   * @retval bool: true or false
   */
-bool WS28XX_Update(WS28XX_HandleTypeDef *Handle)
+bool WS28XX_Update(WS28XX_HandleTypeDef *hLed)
 {
   bool answer = true;
-  uint32_t i = 1;
-  WS28XX_Lock(Handle);
-  for (uint16_t pixel = 0; pixel < Handle->MaxPixel; pixel++)
+  uint32_t i = 2;
+  WS28XX_Lock(hLed);
+  for (uint16_t pixel = 0; pixel < hLed->MaxPixel; pixel++)
   {
     for (int rgb = 0; rgb < 3; rgb ++)
     {
       for (int b = 7; b >= 0 ; b--)
       {
-        if ((Handle->Pixel[pixel][rgb] & (1 << b)) == 0)
+        if ((hLed->Pixel[pixel][rgb] & (1 << b)) == 0)
         {
-          Handle->Buffer[i] = Handle->Pulse0;
+          hLed->Buffer[i] = hLed->Pulse0;
         }
         else
         {
-          Handle->Buffer[i] = Handle->Pulse1;
+          hLed->Buffer[i] = hLed->Pulse1;
         }
         i++;
       }
     }
   }
-  if (HAL_TIM_PWM_Start_DMA(Handle->HTim, Handle->Channel, (const uint32_t*)Handle->Buffer, (Handle->MaxPixel * 24) + 2) != HAL_OK)
+  if (HAL_TIM_PWM_Start_DMA(hLed->hTim, hLed->Channel, (const uint32_t*)hLed->Buffer, (hLed->MaxPixel * 24) + 4) != HAL_OK)
   {
     answer = false;
   }
-  WS28XX_UnLock(Handle);
+  WS28XX_UnLock(hLed);
   return answer;
 }
 

@@ -9,9 +9,11 @@
   Youtube:    https://www.youtube.com/@nimaltd
   Instagram:  https://instagram.com/github.NimaLTD
 
-  Version:    3.0.0
+  Version:    3.0.1
 
   History:
+              3.0.1
+              - Fixed Blinker on first pixel
                         
               3.0.0
               - Rewrite again
@@ -118,14 +120,14 @@ extern "C"
 
 typedef struct
 {
-  TIM_HandleTypeDef      *HTim;
+  TIM_HandleTypeDef      *hTim;
   uint8_t                Channel;
   uint8_t                Lock;
   uint16_t               Pulse0;
   uint16_t               Pulse1;
   uint16_t               MaxPixel;
   uint8_t                Pixel[WS28XX_PIXEL_MAX][3];
-  uint8_t                Buffer[(WS28XX_PIXEL_MAX * 24) + 2];
+  uint8_t                Buffer[(WS28XX_PIXEL_MAX * 24) + 4];
 
 } WS28XX_HandleTypeDef;
 
@@ -133,14 +135,14 @@ typedef struct
 **************    Public Functions
 ************************************************************************************************************/
 
-bool  WS28XX_Init(WS28XX_HandleTypeDef *Handle, TIM_HandleTypeDef *HTim,
+bool  WS28XX_Init(WS28XX_HandleTypeDef *hLed, TIM_HandleTypeDef *hTim,
       uint16_t TimerBusFrequencyMHz, uint8_t Channel, uint16_t Pixel);
-bool  WS28XX_SetPixel_RGB(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint8_t Red, uint8_t Green, uint8_t Blue);
-bool  WS28XX_SetPixel_RGB_565(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint16_t Color);
-bool  WS28XX_SetPixel_RGB_888(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint32_t Color);
-bool  WS28XX_SetPixel_RGBW_565(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint16_t Color, uint8_t Brightness);
-bool  WS28XX_SetPixel_RGBW_888(WS28XX_HandleTypeDef *Handle, uint16_t Pixel, uint32_t Color, uint8_t Brightness);
-bool  WS28XX_Update(WS28XX_HandleTypeDef *Handle);
+bool  WS28XX_SetPixel_RGB(WS28XX_HandleTypeDef *hLed, uint16_t Pixel, uint8_t Red, uint8_t Green, uint8_t Blue);
+bool  WS28XX_SetPixel_RGB_565(WS28XX_HandleTypeDef *hLed, uint16_t Pixel, uint16_t Color);
+bool  WS28XX_SetPixel_RGB_888(WS28XX_HandleTypeDef *hLed, uint16_t Pixel, uint32_t Color);
+bool  WS28XX_SetPixel_RGBW_565(WS28XX_HandleTypeDef *hLed, uint16_t Pixel, uint16_t Color, uint8_t Brightness);
+bool  WS28XX_SetPixel_RGBW_888(WS28XX_HandleTypeDef *hLed, uint16_t Pixel, uint32_t Color, uint8_t Brightness);
+bool  WS28XX_Update(WS28XX_HandleTypeDef *hLed);
 
 #ifdef __cplusplus
 }
